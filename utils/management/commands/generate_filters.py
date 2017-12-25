@@ -4,7 +4,6 @@
 # README https://github.com/olegpshenichniy/django-filter-generation/blob/master/README.md
 
 from django.core.management.base import BaseCommand
-from django.core.management import CommandError
 
 from django.apps import apps
 
@@ -17,7 +16,6 @@ from django.db.models.fields import (CharField, IntegerField, BigIntegerField,
                                      SmallIntegerField, URLField)
 
 from django.db.models.fields.related import ForeignKey
-
 
 TEMPLATE = "\n    {name} = django_filters.{filter_type}Filter(" \
            "name='{attr_name}', " \
@@ -82,29 +80,29 @@ class Command(BaseCommand):
     args = '<app app ...>'
     help = 'Generate filters class by provided app.Model'
 
-    def handle(self, *args, **options):
-        if not args:
-            raise CommandError('Enter app.Model')
+    def add_arguments(self, parser):
+        parser.add_argument('model_name', type=str)
 
-        app_name = args[0].split('.')[0]
-        model_name = args[0].split('.')[1]
+    def handle(self, *args, **options):
+        app_name = options['model_name'].split('.')[0]
+        model_name = options['model_name'].split('.')[1]
 
         model = apps.get_model(app_label=app_name, model_name=model_name)
 
         filters = []
 
         # add greeting message
-        result = "###############################\n" \
-                 "# FILTERS FOR '{0}' MODEL \n" \
-                 "###############################" \
-                 "\n\n".format(model.__name__)
+        result = "########################{1}\n" \
+                 "# Filters for '{0}' model #\n" \
+                 "########################{1}" \
+                 "\n\n".format(model.__name__, '#' * len(model.__name__))
 
         # add class name and extend django filters
         result += "class {0}Filter(django_filters.FilterSet):\n".format(
             model.__name__)
 
         # docs
-        result += '    """\n    FILTERS FOR {0}.{1} MODEL \n    """'.format(
+        result += '    """\n    Filters for {0}.{1} model \n    """'.format(
             app_name, model.__name__)
 
         # loop by modeld fields
@@ -213,4 +211,4 @@ class Command(BaseCommand):
                   "\n        model = {0}" \
                   "\n        fields = {1}\n".format(model.__name__, tuple(filters))
 
-        print result
+        self.stdout.write(result)
